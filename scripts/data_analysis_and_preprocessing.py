@@ -1,4 +1,9 @@
 import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import socket
+import struct
 
 def handle_missing_values(df):
     """Handles missing values in the DataFrame by filling or dropping."""
@@ -34,36 +39,68 @@ def bivariate_analysis(df):
     return correlation_matrix
 
 
+# Function to plot the correlation matrix as a heatmap
+def plot_correlation_matrix(df):
+    # Select only numeric columns
+    numeric_df = df.select_dtypes(include=['float64', 'int64'])
+
+    # Calculate correlation matrix
+    corr_matrix = numeric_df.corr()
+
+    plt.figure(figsize=(12, 8))
+    
+    # Plot heatmap
+    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+    
+    plt.title('Correlation Matrix Heatmap')
+    plt.show()
+
 def convert_ip_to_int(ip_df):
-    """Converts IP address ranges to integer for merging."""
-    ip_df['lower_bound_ip_address'] = ip_df['lower_bound_ip_address'].astype(int)
-    ip_df['upper_bound_ip_address'] = ip_df['upper_bound_ip_address'].astype(int)
+    """Convert lower_bound_ip_address and upper_bound_ip_address to integer format."""
+    # Convert the lower and upper IP address columns to integers
+    ip_df['lower_bound_ip_address'] = ip_df['lower_bound_ip_address'].astype(float).astype(int)
+    ip_df['upper_bound_ip_address'] = ip_df['upper_bound_ip_address'].astype(float).astype(int)
+    
     return ip_df
 
 def merge_ip_country(fraud_df, ip_df):
-    """Merges fraud data with IP address to country mapping using IP address range."""
-    # Ensure ip_address is integer
+    """Merge fraud data with IP address ranges based on IP address range matching."""
+    # Ensure fraud_df's ip_address is integer
     fraud_df['ip_address'] = fraud_df['ip_address'].astype(int)
     
-    # Perform the merge using a condition for matching IP address ranges
-    merged_df = pd.merge_asof(fraud_df.sort_values('ip_address'), 
-                              ip_df.sort_values('lower_bound_ip_address'),
-                              left_on='ip_address', 
-                              right_on='lower_bound_ip_address', 
-                              direction='backward')
+    # Merge by checking if fraud_df's ip_address is between lower and upper bound
+    merged_df = pd.merge_asof(
+        fraud_df.sort_values('ip_address'), 
+        ip_df.sort_values('lower_bound_ip_address'),
+        left_on='ip_address',
+        right_on='lower_bound_ip_address',
+        direction='backward'
+    )
+    
+    # Check that the ip_address is within the range of the matched lower and upper bounds
+    merged_df = merged_df[(merged_df['ip_address'] >= merged_df['lower_bound_ip_address']) & 
+                          (merged_df['ip_address'] <= merged_df['upper_bound_ip_address'])]
     
     return merged_df
 
 
-def feature_engineering(fraud_df):
-    """Creates additional features for fraud detection."""
-    # Calculate time differences between signup and purchase
-    fraud_df['time_to_purchase'] = (fraud_df['purchase_time'] - fraud_df['signup_time']).dt.total_seconds()
-    
-    # Create time-based features
-    fraud_df['hour_of_day'] = fraud_df['purchase_time'].dt.hour
-    fraud_df['day_of_week'] = fraud_df['purchase_time'].dt.dayofweek
-    return fraud_df
+# Function to perform feature engineering
+def feature_engineering(df):
+    # Calculate time-to-purchase in seconds
+    df['time_to_purchase'] = (df['purchase_time'] - df['signup_time']).dt.total_seconds()
+
+    # Extract time-based features
+    df['hour_of_day'] = df['purchase_time'].dt.hour
+    df['day_of_week'] = df['purchase_time'].dt.dayofweek
+
+    # Transaction frequency and velocity
+    # Transaction frequency: number of transactions per user
+    df['transaction_count'] = df.groupby('user_id')['user_id'].transform('count')
+
+    # Transaction velocity: purchase value divided by time to purchase
+    df['transaction_velocity'] = df['purchase_value'] / df['time_to_purchase'].replace(0, np.nan)
+
+    return df
 
 def encode_categorical_features(df):
     """Encodes categorical features into numerical values."""
