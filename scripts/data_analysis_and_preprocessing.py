@@ -17,12 +17,28 @@ def remove_duplicates(df):
     """Removes duplicate rows in the DataFrame."""
     return df.drop_duplicates()
 
+import pandas as pd
+
 def correct_data_types(df):
-    """Correct data types for fraud dataset (especially timestamps)."""
     # Convert signup_time and purchase_time to datetime
-    df['signup_time'] = pd.to_datetime(df['signup_time'])
-    df['purchase_time'] = pd.to_datetime(df['purchase_time'])
+    df['signup_time'] = pd.to_datetime(df['signup_time'], errors='coerce')
+    df['purchase_time'] = pd.to_datetime(df['purchase_time'], errors='coerce')
+
+    # Convert ip_address to integer (if applicable)
+    df['ip_address'] = df['ip_address'].fillna(0).astype(int)
+
+    # Ensure age and purchase_value are integers (if required)
+    df['age'] = df['age'].fillna(0).astype(int)
+    df['purchase_value'] = df['purchase_value'].fillna(0).astype(int)
+
+    # Convert categorical features (device_id, source, browser, sex) to category types for optimization
+    df['device_id'] = df['device_id'].astype('category')
+    df['source'] = df['source'].astype('category')
+    df['browser'] = df['browser'].astype('category')
+    df['sex'] = df['sex'].astype('category')
+
     return df
+
 
 def univariate_analysis(df):
     """Performs univariate analysis such as histograms or count plots."""
