@@ -1,2 +1,5 @@
 data
 venv
+# Ignore MLflow tracking directory
+notebooks/mlruns
+notebooks/Pickle
