@@ -12,8 +12,6 @@ This project focuses on detecting fraudulent transactions in e-commerce and bank
 5. [Model Training and Explainability](#model-training-and-explainability)
 6. [API Development and Deployment](#api-development-and-deployment)
 7. [Dashboard](#dashboard)
-8. [Usage](#usage)
-9. [Future Work](#future-work)
 
 ---
 
