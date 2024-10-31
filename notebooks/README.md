@@ -1,0 +1,2 @@
+## Fraud Detection Notebooks
+This directory contains Jupyter notebooks used for the analysis, model training, interpretability, and deployment steps of the fraud detection project. Each notebook focuses on a key stage in the pipeline, including data preprocessing, model building, interpretability with SHAP and LIME
